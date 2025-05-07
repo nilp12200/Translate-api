@@ -14,9 +14,9 @@ def translate():
     data = request.json
     try:
         response = requests.post(
-            "https://libretranslate.de/translate",
+            "https://translate.argosopentech.com/translate",
             json=data,
-            timeout=10  # prevent long hangs
+            timeout=10
         )
         response.raise_for_status()
         return jsonify(response.json())
@@ -25,5 +25,5 @@ def translate():
 
 if __name__ == "__main__":
     import os
-    port = int(os.environ.get("PORT", 5000))  # for Render compatibility
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
