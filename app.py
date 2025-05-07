@@ -14,7 +14,7 @@ def translate():
     data = request.json
     try:
         response = requests.post(
-            "https://translate.argosopentech.com/translate",
+            "https://libretranslate.com/translate",
             json=data,
             timeout=10
         )
