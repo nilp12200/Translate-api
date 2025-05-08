@@ -4,7 +4,7 @@ import json
 
 app = Flask(__name__)
 
-LIBRETRANSLATE_URL = 'https://libretranslate.de'  # Public instance
+LIBRETRANSLATE_URL = 'https://libretranslate.de'  # Try replacing with 'https://translate.astian.org' if timeout persists
 
 @app.route('/translate', methods=['POST'])
 def translate():
@@ -26,7 +26,8 @@ def translate():
                 'target': dest_lang,
                 'format': 'text'
             },
-            headers={'Content-Type': 'application/x-www-form-urlencoded'}
+            headers={'Content-Type': 'application/x-www-form-urlencoded'},
+            timeout=10
         )
 
         if response.status_code != 200:
@@ -47,7 +48,7 @@ def translate():
 @app.route('/languages', methods=['GET'])
 def get_languages():
     try:
-        response = requests.get(f'{LIBRETRANSLATE_URL}/languages')
+        response = requests.get(f'{LIBRETRANSLATE_URL}/languages', timeout=10)
         languages = response.json()
         return Response(json.dumps(languages, ensure_ascii=False), mimetype='application/json')
     except Exception as e:
