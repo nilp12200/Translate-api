@@ -1,29 +1,59 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask import Flask, request, Response
 import requests
+import json
 
 app = Flask(__name__)
-CORS(app)
 
-@app.route("/")
-def home():
-    return "LibreTranslate proxy is running!"
+LIBRETRANSLATE_URL = 'https://libretranslate.de'
 
-@app.route("/translate", methods=["POST"])
+@app.route('/translate', methods=['POST'])
 def translate():
-    data = request.json
+    data = request.get_json()
+
+    # Validate input
+    if not data or 'q' not in data or 'target' not in data:
+        return Response(json.dumps({'error': 'Missing "q" or "target" in request'}, ensure_ascii=False), mimetype='application/json'), 400
+
+    text = data['q']
+    src_lang = data.get('source', 'auto')
+    dest_lang = data['target']
+
     try:
         response = requests.post(
-            "https://libretranslate.com/translate",
-            json=data,
-            timeout=10
+            f'{LIBRETRANSLATE_URL}/translate',
+            data={
+                'q': text,
+                'source': src_lang,
+                'target': dest_lang,
+                'format': 'text'
+            },
+            headers={'Content-Type': 'application/x-www-form-urlencoded'}
         )
-        response.raise_for_status()
-        return jsonify(response.json())
-    except requests.exceptions.RequestException as e:
-        return jsonify({"error": str(e)}), 500
 
-if __name__ == "__main__":
-    import os
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+        if response.status_code != 200:
+            return Response(json.dumps({'error': 'Translation failed', 'details': response.text}, ensure_ascii=False), mimetype='application/json'), 500
+
+        result = response.json()
+        response_data = {
+            'translatedText': result['translatedText'],
+            'sourceLanguage': src_lang,
+            'targetLanguage': dest_lang
+        }
+        return Response(json.dumps(response_data, ensure_ascii=False), mimetype='application/json')
+
+    except Exception as e:
+        return Response(json.dumps({'error': str(e)}, ensure_ascii=False), mimetype='application/json'), 500
+
+
+@app.route('/languages', methods=['GET'])
+def get_languages():
+    try:
+        response = requests.get(f'{LIBRETRANSLATE_URL}/languages')
+        languages = response.json()
+        return Response(json.dumps(languages, ensure_ascii=False), mimetype='application/json')
+    except Exception as e:
+        return Response(json.dumps({'error': str(e)}, ensure_ascii=False), mimetype='application/json'), 500
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
