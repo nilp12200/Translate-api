@@ -4,13 +4,12 @@ import json
 
 app = Flask(__name__)
 
-LIBRETRANSLATE_URL = 'https://libretranslate.de'
+LIBRETRANSLATE_URL = 'https://libretranslate.de'  # Public instance
 
 @app.route('/translate', methods=['POST'])
 def translate():
     data = request.get_json()
 
-    # Validate input
     if not data or 'q' not in data or 'target' not in data:
         return Response(json.dumps({'error': 'Missing "q" or "target" in request'}, ensure_ascii=False), mimetype='application/json'), 400
 
@@ -56,4 +55,5 @@ def get_languages():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    from waitress import serve
+    serve(app, host='0.0.0.0', port=10000)
